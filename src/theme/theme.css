@@ -1,0 +1,154 @@
+/* ======================
+   LIGHT MODE (default)
+   ====================== */
+
+:root {
+  --color-bg-page: #f8fafc;
+  --color-bg-container: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-bg-spotlight: #f1f5f9;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94a3b8;
+
+  --color-border: #e2e8f0;
+  --color-border-secondary: #f1f5f9;
+
+  --color-code-bg: #f1f5f9;
+  --color-code-text: #dc2626;
+
+  --color-selection: #bfdbfe;
+
+  --color-error: #dc2626;
+  --color-error-bg: #fef2f2;
+}
+
+/* ======================
+   DARK MODE
+   ====================== */
+
+.dark {
+  --color-bg-page: #09090b;
+  --color-bg-container: #18181b;
+  --color-bg-elevated: #27272a;
+  --color-bg-spotlight: #27272a;
+
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #a1a1aa;
+  --color-text-tertiary: #71717a;
+
+  --color-border: #27272a;
+  --color-border-secondary: #18181b;
+
+  --color-code-bg: #18181b;
+  --color-code-text: #fca5a5;
+
+  --color-selection: #3f3f46;
+
+  --color-error: #f87171;
+  --color-error-bg: #450a0a;
+}
+
+/* ======================
+   SCHEME: BLUE (default)
+   ====================== */
+
+:root,
+[data-color-scheme="blue"] {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-bg: #eff6ff;
+}
+
+.dark[data-color-scheme="blue"],
+.dark [data-color-scheme="blue"] {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-bg: #1e3a5f;
+}
+
+/* ======================
+   SCHEME: GREEN
+   ====================== */
+
+[data-color-scheme="green"] {
+  --color-primary: #16a34a;
+  --color-primary-hover: #15803d;
+  --color-primary-bg: #f0fdf4;
+}
+
+.dark[data-color-scheme="green"],
+.dark [data-color-scheme="green"] {
+  --color-primary: #22c55e;
+  --color-primary-hover: #4ade80;
+  --color-primary-bg: #14532d;
+}
+
+/* ======================
+   SCHEME: PURPLE
+   ====================== */
+
+[data-color-scheme="purple"] {
+  --color-primary: #9333ea;
+  --color-primary-hover: #7e22ce;
+  --color-primary-bg: #faf5ff;
+}
+
+.dark[data-color-scheme="purple"],
+.dark [data-color-scheme="purple"] {
+  --color-primary: #a855f7;
+  --color-primary-hover: #c084fc;
+  --color-primary-bg: #3b0764;
+}
+
+/* ======================
+   SCHEME: ORANGE
+   ====================== */
+
+[data-color-scheme="orange"] {
+  --color-primary: #ea580c;
+  --color-primary-hover: #c2410c;
+  --color-primary-bg: #fff7ed;
+}
+
+.dark[data-color-scheme="orange"],
+.dark [data-color-scheme="orange"] {
+  --color-primary: #f97316;
+  --color-primary-hover: #fb923c;
+  --color-primary-bg: #431407;
+}
+
+/* ======================
+   SCHEME: ROSE
+   ====================== */
+
+[data-color-scheme="rose"] {
+  --color-primary: #e11d48;
+  --color-primary-hover: #be123c;
+  --color-primary-bg: #fff1f2;
+}
+
+.dark[data-color-scheme="rose"],
+.dark [data-color-scheme="rose"] {
+  --color-primary: #fb7185;
+  --color-primary-hover: #fda4af;
+  --color-primary-bg: #4c0519;
+}
+
+/* ======================
+   SCHEME: TEAL
+   ====================== */
+
+[data-color-scheme="teal"] {
+  --color-primary: #0d9488;
+  --color-primary-hover: #0f766e;
+  --color-primary-bg: #f0fdfa;
+}
+
+.dark[data-color-scheme="teal"],
+.dark [data-color-scheme="teal"] {
+  --color-primary: #2dd4bf;
+  --color-primary-hover: #5eead4;
+  --color-primary-bg: #042f2e;
+}

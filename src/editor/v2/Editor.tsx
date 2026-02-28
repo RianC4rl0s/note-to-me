@@ -44,11 +44,11 @@ export default function RichTextEditor() {
         <Slate editor={editor} initialValue={initialValue}>
             {/* <Toolbar/> */}
             <NewToolbar />
-            <div className='editor'>
+            <div className='editor h-full overflow-y-auto'>
 
                 <Editable
-                    className='border-gray-300 border-l w-175'
-                    style={{ padding: "4px", height: "100%" }}
+                    className='w-full'
+                    style={{ padding: "16px", minHeight: "100%" }}
                     renderElement={renderElement}
                     renderLeaf={renderLeaf}
                     placeholder="Digite / para comandos…"
@@ -187,10 +187,10 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
         case 'heading-two':
             return <h2 style={style} {...attributes}>{children}</h2>
         case 'block-quote':
-            return <blockquote className='font-light text-sm border-l-4 border-gray-300
+            return <blockquote className='font-light text-sm border-l-4 border-border
                                         pl-4 ml-2
-                                        italic text-gray-700
-                                        bg-gray-50
+                                        italic text-text-secondary
+                                        bg-bg-spotlight
                                         rounded-sm'
                 style={style} {...attributes}>{children}</blockquote>
         case 'bulleted-list':
@@ -204,7 +204,7 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
                 <pre
                     {...attributes}
                     className="
-                       bg-gray-200 text-red-600
+                       bg-code-bg text-code-text
                 rounded-md
                 font-mono text-sm
                 overflow-x-auto
@@ -228,7 +228,7 @@ const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
     if (leaf.bold) children = <strong>{children}</strong>
     if (leaf.italic) children = <em>{children}</em>
     if (leaf.underline) children = <u>{children}</u>
-    if (leaf.code) children = <code className="bg-gray-200 text-red-600 px-1 rounded font-mono text-sm">{children}</code>
+    if (leaf.code) children = <code className="bg-code-bg text-code-text px-1 rounded font-mono text-sm">{children}</code>
 
     return <span {...attributes}>{children}</span>
 }

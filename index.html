@@ -7,6 +7,9 @@
     <title>note-to-me</title>
   </head>
   <body>
+    <script>
+      try{var t=JSON.parse(localStorage.getItem('note-to-me-theme'));if(t&&t.mode==='dark')document.documentElement.classList.add('dark');if(t&&t.colorScheme)document.documentElement.setAttribute('data-color-scheme',t.colorScheme)}catch(e){}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

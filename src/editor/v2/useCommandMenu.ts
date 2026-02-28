@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { Command } from './commands'
 
 export function useCommandMenu() {
   const [open, setOpen] = useState(false)

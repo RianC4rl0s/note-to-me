@@ -18,7 +18,7 @@ export function Toolbar() {
   const editor = useSlate()
 
   return (
-    <div className="flex gap-1 border-b mb-2">
+    <div className="flex gap-1 border-b border-border px-3 py-1">
 
       <ToolbarButton
         active={isMarkActive(editor, 'bold')}

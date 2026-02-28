@@ -10,10 +10,10 @@ export function ToolbarButton({ active, onMouseDown, children }: Props) {
       onMouseDown={onMouseDown}
       className={`
         w-6 h-6 flex items-center justify-center
-        text-gray-500
-        hover:bg-gray-100
+        text-text-secondary
+        hover:bg-bg-spotlight
         rounded
-        ${active ? 'bg-gray-200 text-black' : ''}
+        ${active ? 'bg-bg-spotlight text-text-primary' : ''}
       `}
     >
       {children}

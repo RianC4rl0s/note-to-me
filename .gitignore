@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+#Estou testando a capacidade do claude mas nao quero expor isso, nao sei se é seguro etc.
+CLAUDE.md
