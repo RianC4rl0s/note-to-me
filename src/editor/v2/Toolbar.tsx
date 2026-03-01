@@ -1,25 +1,22 @@
 import { useSlate } from 'slate-react'
-import { toggleMark, toggleBlock, toggleAlign } from './editorCommands'
+import { toggleMark, toggleBlock, toggleAlign, insertDivider, insertLink, removeLink, isLinkActive } from './editorCommands'
 import { isMarkActive, isBlockActive, isAlignActive } from './esditorState'
 import { ToolbarButton } from './ToolbarButton'
 
-import { CiTextAlignJustify } from "react-icons/ci";
-import { CiTextAlignCenter } from "react-icons/ci";
-import { CiTextAlignRight } from "react-icons/ci";
-import { CiTextAlignLeft } from "react-icons/ci";
-import { CiCircleList } from "react-icons/ci";
-import { GoListOrdered } from "react-icons/go";
-import { IoCodeSlashOutline } from "react-icons/io5";
-import { RiDoubleQuotesR } from "react-icons/ri";
-import { TbCodeDots } from "react-icons/tb";
+import { CiTextAlignJustify, CiTextAlignCenter, CiTextAlignRight, CiTextAlignLeft, CiCircleList } from 'react-icons/ci'
+import { GoListOrdered } from 'react-icons/go'
+import { IoCodeSlashOutline } from 'react-icons/io5'
+import { RiDoubleQuotesR } from 'react-icons/ri'
+import { TbCodeDots } from 'react-icons/tb'
+import { FiCheckSquare, FiMinus, FiLink } from 'react-icons/fi'
 
 
 export function Toolbar() {
   const editor = useSlate()
 
   return (
-    <div className="flex gap-1 border-b mb-2">
-
+    <div className="flex flex-wrap gap-1 border-b border-border px-3 py-1">
+      {/* Marks */}
       <ToolbarButton
         active={isMarkActive(editor, 'bold')}
         onMouseDown={e => { e.preventDefault(); toggleMark(editor, 'bold') }}
@@ -40,24 +37,24 @@ export function Toolbar() {
       >
         U
       </ToolbarButton>
+
+      <ToolbarButton
+        active={isMarkActive(editor, 'strikethrough')}
+        onMouseDown={e => { e.preventDefault(); toggleMark(editor, 'strikethrough') }}
+      >
+        <FiMinus />
+      </ToolbarButton>
+
       <ToolbarButton
         active={isMarkActive(editor, 'code')}
         onMouseDown={e => { e.preventDefault(); toggleMark(editor, 'code') }}
       >
-        <IoCodeSlashOutline/>
+        <IoCodeSlashOutline />
       </ToolbarButton>
-      <ToolbarButton
-        active={isBlockActive(editor, 'block-quote')}
-        onMouseDown={e => { e.preventDefault(); toggleBlock(editor, 'block-quote') }}
-      >
-        <RiDoubleQuotesR/>
-      </ToolbarButton>
-      <ToolbarButton
-        active={isBlockActive(editor, 'code-block')}
-        onMouseDown={e => { e.preventDefault(); toggleBlock(editor, 'code-block') }}
-      >
-        <TbCodeDots></TbCodeDots>
-      </ToolbarButton>
+
+      <div className="mx-1 w-px bg-border" />
+
+      {/* Blocks */}
       <ToolbarButton
         active={isBlockActive(editor, 'paragraph')}
         onMouseDown={e => { e.preventDefault(); toggleBlock(editor, 'paragraph') }}
@@ -80,46 +77,98 @@ export function Toolbar() {
       </ToolbarButton>
 
       <ToolbarButton
+        active={isBlockActive(editor, 'block-quote')}
+        onMouseDown={e => { e.preventDefault(); toggleBlock(editor, 'block-quote') }}
+      >
+        <RiDoubleQuotesR />
+      </ToolbarButton>
+
+      <ToolbarButton
+        active={isBlockActive(editor, 'code-block')}
+        onMouseDown={e => { e.preventDefault(); toggleBlock(editor, 'code-block') }}
+      >
+        <TbCodeDots />
+      </ToolbarButton>
+
+      <div className="mx-1 w-px bg-border" />
+
+      {/* Lists */}
+      <ToolbarButton
         active={isBlockActive(editor, 'bulleted-list')}
         onMouseDown={e => { e.preventDefault(); toggleBlock(editor, 'bulleted-list') }}
       >
-        <CiCircleList/>
+        <CiCircleList />
       </ToolbarButton>
-       <ToolbarButton
+
+      <ToolbarButton
         active={isBlockActive(editor, 'numbered-list')}
         onMouseDown={e => { e.preventDefault(); toggleBlock(editor, 'numbered-list') }}
       >
-        <GoListOrdered/>
+        <GoListOrdered />
       </ToolbarButton>
 
+      <ToolbarButton
+        active={isBlockActive(editor, 'check-list-item')}
+        onMouseDown={e => { e.preventDefault(); toggleBlock(editor, 'check-list-item') }}
+      >
+        <FiCheckSquare />
+      </ToolbarButton>
+
+      <div className="mx-1 w-px bg-border" />
+
+      {/* Alignment */}
       <ToolbarButton
         active={isAlignActive(editor, 'left')}
         onMouseDown={e => { e.preventDefault(); toggleAlign(editor, 'left') }}
       >
-        <CiTextAlignLeft/>
+        <CiTextAlignLeft />
       </ToolbarButton>
 
       <ToolbarButton
         active={isAlignActive(editor, 'center')}
         onMouseDown={e => { e.preventDefault(); toggleAlign(editor, 'center') }}
       >
-        <CiTextAlignCenter/>
+        <CiTextAlignCenter />
       </ToolbarButton>
 
       <ToolbarButton
         active={isAlignActive(editor, 'right')}
         onMouseDown={e => { e.preventDefault(); toggleAlign(editor, 'right') }}
       >
-        <CiTextAlignRight/>
+        <CiTextAlignRight />
       </ToolbarButton>
 
       <ToolbarButton
         active={isAlignActive(editor, 'justify')}
         onMouseDown={e => { e.preventDefault(); toggleAlign(editor, 'justify') }}
       >
-        <CiTextAlignJustify/>
+        <CiTextAlignJustify />
       </ToolbarButton>
 
+      <div className="mx-1 w-px bg-border" />
+
+      {/* Insert */}
+      <ToolbarButton
+        active={isLinkActive(editor)}
+        onMouseDown={e => {
+          e.preventDefault()
+          if (isLinkActive(editor)) {
+            removeLink(editor)
+          } else {
+            const url = window.prompt('URL:')
+            if (url) insertLink(editor, url)
+          }
+        }}
+      >
+        <FiLink />
+      </ToolbarButton>
+
+      <ToolbarButton
+        active={false}
+        onMouseDown={e => { e.preventDefault(); insertDivider(editor) }}
+      >
+        <span className="text-[10px]">―</span>
+      </ToolbarButton>
     </div>
   )
 }

@@ -9,6 +9,7 @@ export type CustomText = {
   bold?: boolean
   italic?: boolean
   underline?: boolean
+  strikethrough?: boolean
   code?: boolean
 }
 
@@ -59,10 +60,36 @@ export type NumberedListElement = {
   type: 'numbered-list'
   children: ListItemElement[]
 }
+
 export type CodeBlockElement = {
   type: 'code-block'
   children: CustomText[]
 }
+
+export type CheckListItemElement = {
+  type: 'check-list-item'
+  checked: boolean
+  children: CustomText[]
+}
+
+export type DividerElement = {
+  type: 'divider'
+  children: [CustomText]
+}
+
+export type PageLinkElement = {
+  type: 'page-link'
+  pageId: string
+  pageTitle: string
+  children: [CustomText]
+}
+
+export type LinkElement = {
+  type: 'link'
+  url: string
+  children: CustomText[]
+}
+
 export type CustomElement =
   | ParagraphElement
   | HeadingOneElement
@@ -71,7 +98,11 @@ export type CustomElement =
   | ListItemElement
   | BulletedListElement
   | NumberedListElement
-    | CodeBlockElement
+  | CodeBlockElement
+  | CheckListItemElement
+  | DividerElement
+  | PageLinkElement
+  | LinkElement
 
 export type CustomElementType = CustomElement['type']
 
@@ -101,3 +132,5 @@ export type BlockType =
   | 'numbered-list'
   | 'list-item'
   | 'code-block'
+  | 'check-list-item'
+  | 'divider'
