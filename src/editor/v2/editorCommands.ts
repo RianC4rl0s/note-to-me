@@ -1,4 +1,4 @@
-import { Editor, Transforms, Element as SlateElement } from 'slate'
+import { Editor, Transforms, Element as SlateElement, Range } from 'slate'
 import type {
     AlignType,
     CustomEditor,
@@ -42,6 +42,8 @@ export function toggleBlock(
   if (isList) {
     Transforms.setNodes(editor, { type: 'list-item' })
     Transforms.wrapNodes(editor, { type, children: [] })
+  } else if (type === 'check-list-item') {
+    Transforms.setNodes(editor, { type: 'check-list-item', checked: false })
   } else {
     Transforms.setNodes(editor, { type })
   }
@@ -60,6 +62,70 @@ export function toggleAlign(editor: CustomEditor, align: AlignType) {
     }
   )
 }
+
+/* ---------- INSERT HELPERS ---------- */
+
+export function insertDivider(editor: CustomEditor) {
+  Transforms.insertNodes(editor, {
+    type: 'divider',
+    children: [{ text: '' }],
+  })
+  Transforms.insertNodes(editor, {
+    type: 'paragraph',
+    children: [{ text: '' }],
+  })
+}
+
+export function insertPageLink(
+  editor: CustomEditor,
+  pageId: string,
+  pageTitle: string,
+) {
+  Transforms.insertNodes(editor, {
+    type: 'page-link',
+    pageId,
+    pageTitle,
+    children: [{ text: '' }],
+  })
+  Transforms.move(editor)
+}
+
+/* ---------- LINK HELPERS ---------- */
+
+export function isLinkActive(editor: CustomEditor) {
+  const [match] = Editor.nodes(editor, {
+    match: n => SlateElement.isElement(n) && n.type === 'link',
+  })
+  return !!match
+}
+
+export function insertLink(editor: CustomEditor, url: string) {
+  if (!editor.selection) return
+
+  const { selection } = editor
+  const isCollapsed = Range.isCollapsed(selection)
+
+  const linkNode = {
+    type: 'link' as const,
+    url,
+    children: isCollapsed ? [{ text: url }] : [],
+  }
+
+  if (isCollapsed) {
+    Transforms.insertNodes(editor, linkNode)
+  } else {
+    Transforms.wrapNodes(editor, linkNode, { split: true })
+    Transforms.collapse(editor, { edge: 'end' })
+  }
+}
+
+export function removeLink(editor: CustomEditor) {
+  Transforms.unwrapNodes(editor, {
+    match: n => SlateElement.isElement(n) && n.type === 'link',
+  })
+}
+
+/* ---------- QUERY HELPERS ---------- */
 
 export function isEmptyBlock(editor: CustomEditor) {
   const [match] = Editor.nodes(editor, {
@@ -96,63 +162,3 @@ export function getActiveBlock(editor: Editor) {
 
   return match ? (match[0] as SlateElement) : null
 }
-
-// export function handleKeyDown(
-//   event: React.KeyboardEvent,
-//   editor: CustomEditor,
-//   open: boolean,
-//   setOpen: (v: boolean) => void,
-//   query: string,
-//   setQuery: (v: string) => void,
-//   index: number,
-//   setIndex: (v: number) => void
-// ) {
-//   if (event.key === '/') {
-//     setOpen(true)
-//     setQuery('')
-//     setIndex(0)
-//     return
-//   }
-
-//   if (!open) return
-
-//   if (event.key === 'ArrowDown') {
-//     event.preventDefault()
-//     setIndex(i => i + 1)
-//     return
-//   }
-
-//   if (event.key === 'ArrowUp') {
-//     event.preventDefault()
-//     setIndex(i => Math.max(0, i - 1))
-//     return
-//   }
-
-//   if (event.key === 'Escape') {
-//     setOpen(false)
-//     return
-//   }
-
-//   if (event.key === 'Enter') {
-//     event.preventDefault()
-
-//     const command = COMMANDS[index]
-//     if (!command) return
-
-//     // remove "/query"
-//     Transforms.delete(editor, {
-//       distance: query.length + 1,
-//       unit: 'character',
-//       reverse: true,
-//     })
-
-//     command.run(editor)
-//     setOpen(false)
-//   }
-
-//   // letras → filtro
-//   if (event.key.length === 1) {
-//     setQuery(q => q + event.key)
-//     setIndex(0)
-//   }
-// }

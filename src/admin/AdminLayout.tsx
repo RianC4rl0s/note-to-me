@@ -3,6 +3,7 @@ import {
   UserOutlined,
   SafetyOutlined,
   KeyOutlined,
+  CrownOutlined,
   LogoutOutlined,
   HomeOutlined,
 } from '@ant-design/icons'
@@ -17,6 +18,7 @@ const menuItems = [
   { key: '/admin/users', icon: <UserOutlined />, label: 'Usuários' },
   { key: '/admin/roles', icon: <SafetyOutlined />, label: 'Roles' },
   { key: '/admin/permissions', icon: <KeyOutlined />, label: 'Permissões' },
+  { key: '/admin/plans', icon: <CrownOutlined />, label: 'Planos' },
 ]
 
 const SIDER_BG = '#1f1f23'

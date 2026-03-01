@@ -4,7 +4,15 @@ export type User = {
   email: string
   phone?: string
   birthDate?: string
+  avatarUrl?: string
   roles?: string[]
+  planName?: string
+}
+
+export type UpdateProfileRequest = {
+  name?: string
+  phone?: string
+  birthDate?: string
 }
 
 export type AuthTokens = {

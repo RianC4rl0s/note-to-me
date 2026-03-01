@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { FiEdit3 } from 'react-icons/fi'
 import { ThemeToggle } from './ThemeToggle'
 
 export function AuthLayout({ children }: { children: ReactNode }) {
@@ -8,9 +9,12 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md rounded-lg bg-bg-container p-8 shadow-md">
-        <h1 className="mb-6 text-center text-2xl font-bold text-text-primary">
-          note-to-me
-        </h1>
+        <div className="mb-6 flex items-center justify-center gap-2">
+          <FiEdit3 className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+            Note To Me
+          </h1>
+        </div>
         {children}
       </div>
     </div>

@@ -21,6 +21,7 @@ type AuthContextValue = {
   isImpersonating: boolean
   login: (data: LoginRequest) => Promise<User>
   logout: () => void
+  refreshUser: () => Promise<void>
   impersonate: (targetUserId: string) => Promise<void>
   stopImpersonating: () => Promise<void>
 }
@@ -52,6 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const currentUser = await fetchCurrentUser()
     setUser(currentUser)
     return currentUser
+  }, [])
+
+  const refreshUser = useCallback(async () => {
+    const currentUser = await fetchCurrentUser()
+    setUser(currentUser)
   }, [])
 
   const logout = useCallback(() => {
@@ -94,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isImpersonating,
         login,
         logout,
+        refreshUser,
         impersonate,
         stopImpersonating,
       }}

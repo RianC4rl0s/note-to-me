@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Table, Tag, Button, Modal, Select, message, Space } from 'antd'
 import { LoginOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import type { UserWithRoles, Role } from '../types'
-import { fetchUsers, fetchRoles, assignUserRoles } from '../api'
+import type { UserWithRoles, Role, Plan } from '../types'
+import { fetchUsers, fetchRoles, assignUserRoles, fetchPlans, assignUserPlan } from '../api'
 import { useAuth } from '../../auth/AuthContext'
 
 export function UsersPage() {
@@ -14,15 +14,24 @@ export function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null)
   const [selectedRoleIds, setSelectedRoleIds] = useState<number[]>([])
   const [saving, setSaving] = useState(false)
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [planModalOpen, setPlanModalOpen] = useState(false)
+  const [planUser, setPlanUser] = useState<UserWithRoles | null>(null)
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null)
   const { impersonate } = useAuth()
   const navigate = useNavigate()
 
   async function loadData() {
     setLoading(true)
     try {
-      const [usersData, rolesData] = await Promise.all([fetchUsers(), fetchRoles()])
+      const [usersData, rolesData, plansData] = await Promise.all([
+        fetchUsers(),
+        fetchRoles(),
+        fetchPlans(),
+      ])
       setUsers(usersData)
       setRoles(rolesData)
+      setPlans(plansData)
     } catch {
       message.error('Erro ao carregar dados')
     } finally {
@@ -54,6 +63,28 @@ export function UsersPage() {
       await loadData()
     } catch {
       message.error('Erro ao atualizar roles')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function openPlanModal(user: UserWithRoles) {
+    setPlanUser(user)
+    const currentPlan = plans.find((p) => p.name === user.planName)
+    setSelectedPlanId(currentPlan?.id ?? null)
+    setPlanModalOpen(true)
+  }
+
+  async function handleAssignPlan() {
+    if (!planUser || selectedPlanId === null) return
+    setSaving(true)
+    try {
+      await assignUserPlan(planUser.id, selectedPlanId)
+      message.success('Plano atualizado')
+      setPlanModalOpen(false)
+      await loadData()
+    } catch {
+      message.error('Erro ao atualizar plano')
     } finally {
       setSaving(false)
     }
@@ -96,12 +127,22 @@ export function UsersPage() {
       ),
     },
     {
+      title: 'Plano',
+      key: 'planName',
+      render: (_: unknown, record: UserWithRoles) => (
+        record.planName ? <Tag color="purple">{record.planName}</Tag> : <span style={{ color: '#999' }}>—</span>
+      ),
+    },
+    {
       title: 'Ações',
       key: 'actions',
       render: (_: unknown, record: UserWithRoles) => (
         <Space>
           <Button size="small" onClick={() => openRoleModal(record)}>
-            Editar Roles
+            Roles
+          </Button>
+          <Button size="small" onClick={() => openPlanModal(record)}>
+            Plano
           </Button>
           <Button
             size="small"
@@ -140,6 +181,22 @@ export function UsersPage() {
           value={selectedRoleIds}
           onChange={setSelectedRoleIds}
           options={roles.map((r) => ({ label: r.name, value: r.id }))}
+        />
+      </Modal>
+
+      <Modal
+        title={`Plano de ${planUser?.name ?? ''}`}
+        open={planModalOpen}
+        onOk={handleAssignPlan}
+        onCancel={() => setPlanModalOpen(false)}
+        confirmLoading={saving}
+      >
+        <Select
+          style={{ width: '100%' }}
+          placeholder="Selecione um plano"
+          value={selectedPlanId}
+          onChange={setSelectedPlanId}
+          options={plans.map((p) => ({ label: `${p.name} (${p.maxProjects} proj / ${p.maxPagesPerProject} pág)`, value: p.id }))}
         />
       </Modal>
     </>

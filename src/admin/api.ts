@@ -1,4 +1,4 @@
-import type { Role, Permission, UserWithRoles, PageResponse } from './types'
+import type { Role, Permission, UserWithRoles, PageResponse, Plan, CreatePlanRequest, UpdatePlanRequest } from './types'
 import type { AuthTokens } from '../auth/types'
 import api from '../lib/axios'
 
@@ -55,6 +55,30 @@ export async function deletePermission(id: number): Promise<void> {
 // User role assignment
 export async function assignUserRoles(userId: string, roleIds: number[]): Promise<void> {
   await api.put(`/api/admin/users/${userId}/roles`, { roleIds })
+}
+
+// Plans CRUD
+export async function fetchPlans(): Promise<Plan[]> {
+  const res = await api.get<Plan[]>('/api/admin/plans')
+  return res.data
+}
+
+export async function createPlan(data: CreatePlanRequest): Promise<Plan> {
+  const res = await api.post<Plan>('/api/admin/plans', data)
+  return res.data
+}
+
+export async function updatePlan(id: number, data: UpdatePlanRequest): Promise<Plan> {
+  const res = await api.put<Plan>(`/api/admin/plans/${id}`, data)
+  return res.data
+}
+
+export async function deletePlan(id: number): Promise<void> {
+  await api.delete(`/api/admin/plans/${id}`)
+}
+
+export async function assignUserPlan(userId: string, planId: number): Promise<void> {
+  await api.put(`/api/admin/users/${userId}/plan`, { planId })
 }
 
 // Impersonation

@@ -18,7 +18,28 @@ export type UserWithRoles = {
   phone?: string
   birthDate?: string
   roles: string[]
+  planName?: string
 }
+
+export type Plan = {
+  id: number
+  name: string
+  description?: string
+  maxProjects: number
+  maxPagesPerProject: number
+  builtIn: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type CreatePlanRequest = {
+  name: string
+  description?: string
+  maxProjects: number
+  maxPagesPerProject: number
+}
+
+export type UpdatePlanRequest = Partial<CreatePlanRequest>
 
 export type PageResponse<T> = {
   content: T[]

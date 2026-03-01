@@ -1,4 +1,4 @@
-import type { AuthTokens, LoginRequest, RegisterRequest, User } from './types'
+import type { AuthTokens, LoginRequest, RegisterRequest, UpdateProfileRequest, User } from './types'
 import api from '../lib/axios'
 import axios from 'axios'
 
@@ -68,5 +68,10 @@ export async function registerApi(data: RegisterRequest): Promise<User> {
 
 export async function fetchCurrentUser(): Promise<User> {
   const res = await api.get<User>('/api/users/me')
+  return res.data
+}
+
+export async function updateProfile(data: UpdateProfileRequest): Promise<User> {
+  const res = await api.put<User>('/api/users/me', data)
   return res.data
 }

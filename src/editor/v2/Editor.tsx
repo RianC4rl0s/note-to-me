@@ -3,18 +3,21 @@ import React, { useCallback, useMemo } from 'react'
 import {
     Editor,
     type Descendant, Element as SlateElement,
+    Range,
     Transforms
 } from 'slate'
-import { Slate, Editable, type RenderElementProps, type RenderLeafProps } from 'slate-react'
-//import { withHistory } from 'slate-history'
+import { Slate, Editable, type RenderElementProps, type RenderLeafProps, useSlateStatic, ReactEditor } from 'slate-react'
+import { useNavigate } from 'react-router-dom'
 
 import { CommandMenu } from './CommandMenu'
 import { toggleMark, isEmptyBlock, unwrapList, isCodeBlockActive, getActiveBlock } from './editorCommands'
 import type { CustomTextKey } from './types'
 import { createCustomEditor } from './createCustomEditor'
+import { HoveringToolbar } from './HoveringToolbar'
 
 import { Toolbar as NewToolbar } from './Toolbar'
 import { COMMANDS } from './commands'
+import { FiFileText, FiExternalLink } from 'react-icons/fi'
 
 
 const HOTKEYS: Record<string, CustomTextKey> = {
@@ -22,9 +25,20 @@ const HOTKEYS: Record<string, CustomTextKey> = {
     'mod+i': 'italic',
     'mod+u': 'underline',
     'mod+`': 'code',
+    'mod+shift+s': 'strikethrough',
 }
 
-export default function RichTextEditor() {
+type RichTextEditorProps = {
+    initialValue?: Descendant[]
+    onChange?: (value: Descendant[]) => void
+    projectId?: string
+}
+
+const DEFAULT_VALUE: Descendant[] = [
+    { type: 'paragraph', children: [{ text: '' }] },
+]
+
+export default function RichTextEditor({ initialValue, onChange, projectId }: RichTextEditorProps) {
     const editor = useMemo(() => createCustomEditor(), [])
 
     const renderElement = useCallback(
@@ -37,14 +51,49 @@ export default function RichTextEditor() {
         []
     )
     const [menuOpen, setMenuOpen] = React.useState(false)
-    const [query, setQuery] = React.useState('')
     const [index, setIndex] = React.useState(0)
     return (
 
-        <Slate editor={editor} initialValue={initialValue}>
-            {/* <Toolbar/> */}
+        <Slate
+            editor={editor}
+            initialValue={initialValue ?? DEFAULT_VALUE}
+            onChange={value => {
+                const isAstChange = editor.operations.some(
+                    op => op.type !== 'set_selection'
+                )
+                if (isAstChange && onChange) {
+                    onChange(value)
+                }
+
+                // Close command menu if "/" context is lost
+                if (menuOpen) {
+                    const { selection } = editor
+                    if (!selection || !Range.isCollapsed(selection)) {
+                        setMenuOpen(false)
+                        return
+                    }
+                    try {
+                        const [node] = Editor.node(editor, selection)
+                        if ('text' in node) {
+                            const text = (node as { text: string }).text
+                            const offset = selection.anchor.offset
+                            const before = text.slice(0, offset)
+                            if (!before.includes('/')) {
+                                setMenuOpen(false)
+                            }
+                        } else {
+                            setMenuOpen(false)
+                        }
+                    } catch {
+                        setMenuOpen(false)
+                    }
+                }
+            }}
+        >
+            <div className="flex flex-1 min-h-0 flex-col">
             <NewToolbar />
-            <div className='editor h-full overflow-y-auto'>
+            <HoveringToolbar />
+            <div className='editor flex-1 min-h-0 overflow-y-auto overflow-x-hidden'>
 
                 <Editable
                     className='w-full'
@@ -54,16 +103,12 @@ export default function RichTextEditor() {
                     placeholder="Digite / para comandos…"
                     onKeyDown={event => {
                         if (event.key === 'Enter' && isCodeBlockActive(editor)) {
-                            // Shift + Enter → sai do code block
                             if (event.shiftKey) {
                                 event.preventDefault()
-
                                 Editor.insertBreak(editor)
                                 Transforms.setNodes(editor, { type: 'paragraph' })
                                 return
                             }
-
-                            // Enter normal → nova linha no code block
                             event.preventDefault()
                             Editor.insertText(editor, '\n')
                             return
@@ -74,38 +119,72 @@ export default function RichTextEditor() {
 
                             if (
                                 block &&
-                                ['heading-one', 'heading-two', 'block-quote', 'code-inline'].includes(block.type)
+                                ['heading-one', 'heading-two', 'block-quote'].includes(block.type)
                             ) {
                                 event.preventDefault()
-
-                                // quebra de linha + volta para parágrafo
                                 Editor.insertBreak(editor)
                                 Transforms.setNodes(editor, { type: 'paragraph' })
                                 return
                             }
-                        }
-                        if (event.key === 'Backspace') {
-                            const [listItem] = Editor.nodes(editor, {
-                                match: n =>
-                                    SlateElement.isElement(n) &&
-                                    (n.type === 'list-item' || n.type === 'code-block'),
-                            })
 
-                            if (listItem && isEmptyBlock(editor)) {
+                            if (block && block.type === 'check-list-item' && isEmptyBlock(editor)) {
                                 event.preventDefault()
-                                unwrapList(editor)
+                                Transforms.setNodes(editor, { type: 'paragraph' })
+                                return
+                            }
+
+                            if (block && block.type === 'check-list-item') {
+                                event.preventDefault()
+                                Editor.insertBreak(editor)
+                                Transforms.setNodes(editor, { type: 'check-list-item', checked: false })
                                 return
                             }
                         }
 
+                        if (event.key === 'Backspace') {
+                            const [listItem] = Editor.nodes(editor, {
+                                match: n =>
+                                    SlateElement.isElement(n) &&
+                                    (n.type === 'list-item' || n.type === 'code-block' || n.type === 'check-list-item'),
+                            })
+
+                            if (listItem && isEmptyBlock(editor)) {
+                                event.preventDefault()
+                                if (SlateElement.isElement(listItem[0]) && listItem[0].type === 'check-list-item') {
+                                    Transforms.setNodes(editor, { type: 'paragraph' })
+                                } else {
+                                    unwrapList(editor)
+                                }
+                                return
+                            }
+                        }
+
+                        if (event.key === 'Tab') {
+                            event.preventDefault()
+                            Editor.insertText(editor, '  ')
+                            return
+                        }
+
                         if (event.key === '/') {
                             setMenuOpen(true)
-                            setQuery('')
                             setIndex(0)
                             return
                         }
 
-                        if (!menuOpen) return
+                        if (!menuOpen) {
+                            for (const hotkey in HOTKEYS) {
+                                if (isHotkey(hotkey, event)) {
+                                    event.preventDefault()
+                                    toggleMark(editor, HOTKEYS[hotkey])
+                                }
+                            }
+                            return
+                        }
+
+                        if (event.key === ' ') {
+                            setMenuOpen(false)
+                            return
+                        }
 
                         if (event.key === 'ArrowDown') {
                             event.preventDefault()
@@ -124,17 +203,29 @@ export default function RichTextEditor() {
                             return
                         }
 
-
-
                         if (menuOpen && event.key === 'Enter') {
                             event.preventDefault()
 
-                            const command = COMMANDS[index]
+                            // Read query from editor text
+                            const { selection } = editor
+                            if (!selection) return
+                            const [node] = Editor.node(editor, selection)
+                            if (!('text' in node)) return
+                            const text = (node as { text: string }).text
+                            const offset = selection.anchor.offset
+                            const before = text.slice(0, offset)
+                            const slashIdx = before.lastIndexOf('/')
+                            const q = slashIdx === -1 ? '' : before.slice(slashIdx + 1)
+
+                            const filtered = COMMANDS.filter(cmd =>
+                                cmd.label.toLowerCase().includes(q.toLowerCase()) ||
+                                cmd.keywords.some(k => k.includes(q.toLowerCase()))
+                            )
+                            const command = filtered[index]
                             if (!command) return
 
-                            // remove "/query"
                             Transforms.delete(editor, {
-                                distance: query.length + 1,
+                                distance: q.length + 1,
                                 unit: 'character',
                                 reverse: true,
                             })
@@ -142,33 +233,18 @@ export default function RichTextEditor() {
                             command.run(editor)
                             setMenuOpen(false)
                         }
-
-                        // hotkeys normais
-                        for (const hotkey in HOTKEYS) {
-                            if (isHotkey(hotkey, event)) {
-                                event.preventDefault()
-                                toggleMark(editor, HOTKEYS[hotkey])
-                            }
-                        }
                     }}
-                // onKeyDown={event => {
-                //     for (const hotkey in HOTKEYS) {
-                //         if (isHotkey(hotkey, event)) {
-                //             event.preventDefault()
-                //             toggleMark(editor, HOTKEYS[hotkey])
-                //         }
-                //     }
-                // }}
                 />
             </div>
 
             <CommandMenu
                 open={menuOpen}
-                query={query}
                 index={index}
                 setIndex={setIndex}
                 close={() => setMenuOpen(false)}
+                projectId={projectId}
             />
+            </div>
         </Slate>
 
     )
@@ -176,7 +252,9 @@ export default function RichTextEditor() {
 
 /* ---------- ELEMENT ---------- */
 
-const Element = ({ attributes, children, element }: RenderElementProps) => {
+const Element = (props: RenderElementProps) => {
+    const { attributes, children, element } = props
+
     const style: React.CSSProperties = {
         textAlign: 'align' in element ? element.align : undefined,
     }
@@ -203,24 +281,115 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
             return (
                 <pre
                     {...attributes}
-                    className="
-                       bg-code-bg text-code-text
-                rounded-md
-                font-mono text-sm
-                overflow-x-auto
-                p-1
-                leading-relaxed
-                whitespace-pre-wrap
-                    "
+                    className="bg-code-bg text-code-text rounded-md font-mono text-sm overflow-x-auto p-1 leading-relaxed whitespace-pre-wrap"
                 >
                     {children}
                 </pre>
             )
+        case 'check-list-item':
+            return <CheckListItemElement {...props} />
+        case 'divider':
+            return (
+                <div {...attributes} contentEditable={false} className="py-2">
+                    <hr className="border-border" />
+                    {children}
+                </div>
+            )
+        case 'page-link':
+            return <PageLinkInline {...props} />
+        case 'link':
+            return <LinkInline {...props} />
         default:
             return <p style={style} {...attributes}>{children}</p>
     }
 }
 
+/* ---------- CHECK LIST ITEM ---------- */
+
+function CheckListItemElement({ attributes, children, element }: RenderElementProps) {
+    const editor = useSlateStatic()
+
+    if (element.type !== 'check-list-item') return null
+    const checked = element.checked
+    const path = ReactEditor.findPath(editor, element)
+
+    return (
+        <div className="check-list-item" {...attributes}>
+            <span contentEditable={false} className="mr-2 flex-shrink-0 select-none">
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={e => {
+                        Transforms.setNodes(
+                            editor,
+                            { checked: e.target.checked },
+                            { at: path },
+                        )
+                    }}
+                    className="h-4 w-4 accent-primary cursor-pointer"
+                />
+            </span>
+            <span className={`flex-1 ${checked ? 'line-through opacity-50' : ''}`}>
+                {children}
+            </span>
+        </div>
+    )
+}
+
+/* ---------- PAGE LINK ---------- */
+
+function PageLinkInline({ attributes, children, element }: RenderElementProps) {
+    const navigate = useNavigate()
+
+    if (element.type !== 'page-link') return null
+
+    const handleClick = (e: React.MouseEvent) => {
+        e.preventDefault()
+        const match = window.location.pathname.match(/\/projects\/([^/]+)/)
+        if (match) {
+            navigate(`/projects/${match[1]}/pages/${element.pageId}`)
+        }
+    }
+
+    return (
+        <span
+            {...attributes}
+            contentEditable={false}
+            onClick={handleClick}
+            className="inline-flex items-center gap-1 rounded bg-primary-bg px-1.5 py-0.5 text-xs font-medium text-primary cursor-pointer hover:opacity-80"
+        >
+            <FiFileText className="h-3 w-3" />
+            {element.pageTitle}
+            {children}
+        </span>
+    )
+}
+
+/* ---------- LINK ---------- */
+
+function LinkInline({ attributes, children, element }: RenderElementProps) {
+    if (element.type !== 'link') return null
+
+    return (
+        <a
+            {...attributes}
+            href={element.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => {
+                if (!e.metaKey && !e.ctrlKey) return
+                e.preventDefault()
+                window.open(element.url, '_blank')
+            }}
+            className="text-primary underline decoration-primary/40 hover:decoration-primary inline-flex items-center gap-0.5"
+        >
+            {children}
+            <span contentEditable={false} className="inline-flex items-center">
+                <FiExternalLink className="inline h-3 w-3 shrink-0" />
+            </span>
+        </a>
+    )
+}
 
 /* ---------- LEAF ---------- */
 
@@ -228,16 +397,8 @@ const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
     if (leaf.bold) children = <strong>{children}</strong>
     if (leaf.italic) children = <em>{children}</em>
     if (leaf.underline) children = <u>{children}</u>
+    if (leaf.strikethrough) children = <s>{children}</s>
     if (leaf.code) children = <code className="bg-code-bg text-code-text px-1 rounded font-mono text-sm">{children}</code>
 
     return <span {...attributes}>{children}</span>
 }
-
-/* ---------- INITIAL VALUE ---------- */
-
-const initialValue: Descendant[] = [
-    {
-        type: 'paragraph',
-        children: [{ text: '' }],
-    },
-]
