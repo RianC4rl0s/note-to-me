@@ -78,7 +78,10 @@ export function WorkspaceLayout() {
             key: 'stop-impersonating',
             icon: <StopOutlined />,
             label: 'Parar de representar',
-            onClick: stopImpersonating,
+            onClick: async () => {
+              await stopImpersonating()
+              navigate('/admin/users')
+            },
           },
         ]
       : []),

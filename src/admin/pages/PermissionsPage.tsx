@@ -82,6 +82,18 @@ export function PermissionsPage() {
       key: 'description',
     },
     {
+      title: 'Criado em',
+      key: 'createdAt',
+      render: (_: unknown, record: Permission) =>
+        new Date(record.createdAt).toLocaleDateString('pt-BR'),
+    },
+    {
+      title: 'Atualizado em',
+      key: 'updatedAt',
+      render: (_: unknown, record: Permission) =>
+        new Date(record.updatedAt).toLocaleDateString('pt-BR'),
+    },
+    {
       title: 'Ações',
       key: 'actions',
       render: (_: unknown, record: Permission) => (

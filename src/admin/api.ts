@@ -1,4 +1,4 @@
-import type { Role, Permission, UserWithRoles, PageResponse, Plan, CreatePlanRequest, UpdatePlanRequest } from './types'
+import type { Role, Permission, UserWithRoles, PageResponse, Plan, CreatePlanRequest, UpdatePlanRequest, CreateUserRequest } from './types'
 import type { AuthTokens } from '../auth/types'
 import api from '../lib/axios'
 
@@ -8,9 +8,33 @@ export async function fetchUsers(): Promise<UserWithRoles[]> {
   return res.data.content
 }
 
+export async function fetchUser(id: string): Promise<UserWithRoles> {
+  const res = await api.get<UserWithRoles>(`/api/users/${id}`)
+  return res.data
+}
+
+export async function createUser(data: CreateUserRequest): Promise<UserWithRoles> {
+  const res = await api.post<UserWithRoles>('/api/admin/users', data)
+  return res.data
+}
+
+export async function toggleUserActive(id: string): Promise<UserWithRoles> {
+  const res = await api.patch<UserWithRoles>(`/api/admin/users/${id}/active`)
+  return res.data
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  await api.delete(`/api/admin/users/${id}`)
+}
+
 // Roles CRUD
 export async function fetchRoles(): Promise<Role[]> {
   const res = await api.get<Role[]>('/api/admin/roles')
+  return res.data
+}
+
+export async function fetchRole(id: number): Promise<Role> {
+  const res = await api.get<Role>(`/api/admin/roles/${id}`)
   return res.data
 }
 
@@ -60,6 +84,11 @@ export async function assignUserRoles(userId: string, roleIds: number[]): Promis
 // Plans CRUD
 export async function fetchPlans(): Promise<Plan[]> {
   const res = await api.get<Plan[]>('/api/admin/plans')
+  return res.data
+}
+
+export async function fetchPlan(id: number): Promise<Plan> {
+  const res = await api.get<Plan>(`/api/admin/plans/${id}`)
   return res.data
 }
 

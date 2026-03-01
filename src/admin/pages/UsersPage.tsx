@@ -1,10 +1,28 @@
 import { useEffect, useState } from 'react'
-import { Table, Tag, Button, Modal, Select, message, Space } from 'antd'
-import { LoginOutlined } from '@ant-design/icons'
+import { Table, Tag, Button, Modal, Select, Form, Input, DatePicker, Dropdown, message, Popconfirm } from 'antd'
+import { PlusOutlined, MoreOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import type { UserWithRoles, Role, Plan } from '../types'
-import { fetchUsers, fetchRoles, assignUserRoles, fetchPlans, assignUserPlan } from '../api'
+import {
+  fetchUsers,
+  fetchRoles,
+  assignUserRoles,
+  fetchPlans,
+  assignUserPlan,
+  createUser,
+  toggleUserActive,
+  deleteUser,
+} from '../api'
 import { useAuth } from '../../auth/AuthContext'
+
+type CreateUserForm = {
+  name: string
+  email: string
+  password: string
+  phone?: string
+  birthDate?: unknown
+  roleIds?: number[]
+}
 
 export function UsersPage() {
   const [users, setUsers] = useState<UserWithRoles[]>([])
@@ -18,6 +36,9 @@ export function UsersPage() {
   const [planModalOpen, setPlanModalOpen] = useState(false)
   const [planUser, setPlanUser] = useState<UserWithRoles | null>(null)
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [createForm] = Form.useForm<CreateUserForm>()
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const { impersonate } = useAuth()
   const navigate = useNavigate()
 
@@ -45,7 +66,6 @@ export function UsersPage() {
 
   function openRoleModal(user: UserWithRoles) {
     setSelectedUser(user)
-    // Map user role names to role IDs from the admin roles list
     const ids = roles
       .filter((r) => user.roles.includes(r.name))
       .map((r) => r.id)
@@ -99,6 +119,56 @@ export function UsersPage() {
     }
   }
 
+  function openCreateModal() {
+    createForm.resetFields()
+    setCreateModalOpen(true)
+  }
+
+  async function handleCreateUser() {
+    try {
+      const values = await createForm.validateFields()
+      setSaving(true)
+      const birthDate = values.birthDate
+        ? (values.birthDate as { format: (f: string) => string }).format('YYYY-MM-DD')
+        : undefined
+      await createUser({
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        phone: values.phone || undefined,
+        birthDate,
+        roleIds: values.roleIds,
+      })
+      message.success('Usuário criado')
+      setCreateModalOpen(false)
+      await loadData()
+    } catch {
+      if (saving) message.error('Erro ao criar usuário')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleToggleActive(userId: string) {
+    try {
+      await toggleUserActive(userId)
+      message.success('Status atualizado')
+      await loadData()
+    } catch {
+      message.error('Erro ao alterar status do usuário')
+    }
+  }
+
+  async function handleDelete(userId: string) {
+    try {
+      await deleteUser(userId)
+      message.success('Usuário removido')
+      await loadData()
+    } catch {
+      message.error('Erro ao remover usuário')
+    }
+  }
+
   const columns = [
     {
       title: 'Nome',
@@ -114,7 +184,7 @@ export function UsersPage() {
       title: 'Roles',
       key: 'roles',
       render: (_: unknown, record: UserWithRoles) => (
-        <Space size={[0, 4]} wrap>
+        <span>
           {record.roles.map((role) => (
             <Tag
               color={role === 'SUPER_ADMIN' || role === 'ADMIN' ? 'red' : 'blue'}
@@ -123,7 +193,7 @@ export function UsersPage() {
               {role}
             </Tag>
           ))}
-        </Space>
+        </span>
       ),
     },
     {
@@ -134,31 +204,95 @@ export function UsersPage() {
       ),
     },
     {
+      title: 'Status',
+      key: 'active',
+      render: (_: unknown, record: UserWithRoles) => (
+        record.active !== false
+          ? <Tag color="green">Ativo</Tag>
+          : <Tag color="red">Inativo</Tag>
+      ),
+    },
+    {
+      title: 'Criado em',
+      key: 'createdAt',
+      render: (_: unknown, record: UserWithRoles) =>
+        new Date(record.createdAt).toLocaleDateString('pt-BR'),
+    },
+    {
+      title: 'Atualizado em',
+      key: 'updatedAt',
+      render: (_: unknown, record: UserWithRoles) =>
+        new Date(record.updatedAt).toLocaleDateString('pt-BR'),
+    },
+    {
       title: 'Ações',
       key: 'actions',
-      render: (_: unknown, record: UserWithRoles) => (
-        <Space>
-          <Button size="small" onClick={() => openRoleModal(record)}>
-            Roles
-          </Button>
-          <Button size="small" onClick={() => openPlanModal(record)}>
-            Plano
-          </Button>
-          <Button
-            size="small"
-            icon={<LoginOutlined />}
-            onClick={() => handleImpersonate(record.id)}
+      render: (_: unknown, record: UserWithRoles) => {
+        const isTargetAdmin = record.roles.some((r) => r === 'SUPER_ADMIN' || r === 'ADMIN')
+        return (
+          <Popconfirm
+            title="Remover este usuário?"
+            open={deleteConfirmId === record.id}
+            onConfirm={() => {
+              setDeleteConfirmId(null)
+              handleDelete(record.id)
+            }}
+            onCancel={() => setDeleteConfirmId(null)}
           >
-            Representar
-          </Button>
-        </Space>
-      ),
+            <Dropdown
+              menu={{
+                items: [
+                  {
+                    key: 'roles',
+                    label: 'Roles',
+                    onClick: () => openRoleModal(record),
+                  },
+                  {
+                    key: 'plan',
+                    label: 'Plano',
+                    onClick: () => openPlanModal(record),
+                  },
+                  {
+                    key: 'toggle-active',
+                    label: record.active !== false ? 'Desativar' : 'Ativar',
+                    disabled: isTargetAdmin,
+                    onClick: () => handleToggleActive(record.id),
+                  },
+                  {
+                    key: 'impersonate',
+                    label: 'Representar',
+                    disabled: isTargetAdmin,
+                    onClick: () => handleImpersonate(record.id),
+                  },
+                  { type: 'divider' },
+                  {
+                    key: 'delete',
+                    label: 'Remover',
+                    danger: true,
+                    disabled: isTargetAdmin,
+                    onClick: () => setDeleteConfirmId(record.id),
+                  },
+                ],
+              }}
+              trigger={['click']}
+            >
+              <Button size="small" icon={<MoreOutlined />} />
+            </Dropdown>
+          </Popconfirm>
+        )
+      },
     },
   ]
 
   return (
     <>
-      <h2 style={{ marginBottom: 16 }}>Gerenciar Usuários</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h2>Gerenciar Usuários</h2>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
+          Novo Usuário
+        </Button>
+      </div>
+
       <Table
         dataSource={users}
         columns={columns}
@@ -166,6 +300,39 @@ export function UsersPage() {
         loading={loading}
         pagination={{ pageSize: 10 }}
       />
+
+      <Modal
+        title="Novo Usuário"
+        open={createModalOpen}
+        onOk={handleCreateUser}
+        onCancel={() => setCreateModalOpen(false)}
+        confirmLoading={saving}
+      >
+        <Form form={createForm} layout="vertical">
+          <Form.Item name="name" label="Nome" rules={[{ required: true, message: 'Nome obrigatório' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email', message: 'Email válido obrigatório' }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="password" label="Senha" rules={[{ required: true, min: 8, message: 'Mínimo 8 caracteres' }]}>
+            <Input.Password />
+          </Form.Item>
+          <Form.Item name="phone" label="Telefone">
+            <Input />
+          </Form.Item>
+          <Form.Item name="birthDate" label="Data de nascimento">
+            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+          </Form.Item>
+          <Form.Item name="roleIds" label="Roles">
+            <Select
+              mode="multiple"
+              placeholder="Selecione as roles"
+              options={roles.map((r) => ({ label: r.name, value: r.id }))}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <Modal
         title={`Roles de ${selectedUser?.name ?? ''}`}

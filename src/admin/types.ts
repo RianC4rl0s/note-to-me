@@ -2,6 +2,8 @@ export type Permission = {
   id: number
   name: string
   description?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export type Role = {
@@ -9,6 +11,8 @@ export type Role = {
   name: string
   description?: string
   permissions: Permission[]
+  createdAt: string
+  updatedAt: string
 }
 
 export type UserWithRoles = {
@@ -19,6 +23,18 @@ export type UserWithRoles = {
   birthDate?: string
   roles: string[]
   planName?: string
+  active?: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type CreateUserRequest = {
+  name: string
+  email: string
+  password: string
+  phone?: string
+  birthDate?: string
+  roleIds?: number[]
 }
 
 export type Plan = {
